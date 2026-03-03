@@ -1,0 +1,547 @@
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(6px);
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 520px;
+    background: #0f1628;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xl);
+    padding: 32px;
+    box-shadow: var(--shadow-card), 0 0 60px rgba(255, 153, 0, 0.08);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.modal-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.modal-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.required {
+    color: var(--accent);
+}
+
+.optional {
+    color: var(--text-muted);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper .input-field {
+    padding-right: 36px;
+}
+
+.input-action {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+}
+
+.input-action:hover {
+    color: var(--text-primary);
+}
+
+.modal-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--red-dim);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--red);
+    font-size: 13px;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.modal-security {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.modal-submit {
+    min-width: 160px;
+    justify-content: center;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+}
+
+@media (max-width: 480px) {
+    .modal-box {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .modal-submit {
+        width: 100%;
+    }
+}
+
+/* ─── Custom Region Dropdown ─────────────────────────────────────── */
+.region-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.region-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm, 8px);
+    color: var(--text-primary, #f0f4ff);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.region-trigger:hover,
+.region-trigger:focus {
+    border-color: var(--accent, #ff9900);
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+}
+
+.region-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.region-chevron {
+    margin-left: auto;
+    color: var(--text-muted, #6b7080);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.region-chevron-open {
+    transform: rotate(180deg);
+}
+
+/* Dropdown list */
+.region-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background: #0d1424;
+    border: 1px solid rgba(255, 153, 0, 0.25);
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 153, 0, 0.08);
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    transform-origin: top center;
+}
+
+/* Custom scrollbar */
+.region-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.region-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.region-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 153, 0, 0.3);
+    border-radius: 4px;
+}
+
+/* Option items */
+.region-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 12.5px;
+    color: rgba(200, 210, 235, 0.75);
+    transition: background 0.12s, color 0.12s;
+}
+
+.region-option:hover {
+    background: rgba(255, 153, 0, 0.12);
+    color: var(--text-primary, #f0f4ff);
+}
+
+.region-option-active {
+    background: rgba(255, 153, 0, 0.15);
+    color: var(--accent, #ff9900);
+    font-weight: 600;
+}
+
+.region-option-active:hover {
+    background: rgba(255, 153, 0, 0.22);
+}
+
+.region-check {
+    color: var(--accent, #ff9900);
+    flex-shrink: 0;
+}
+
+/* ─── Tab Switcher ───────────────────────────────────────────────── */
+.modal-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.modal-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #6b7080);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-tab:hover {
+    color: var(--text-primary, #f0f4ff);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-tab-active {
+    background: rgba(255, 153, 0, 0.15) !important;
+    color: var(--accent, #ff9900) !important;
+    border: 1px solid rgba(255, 153, 0, 0.3);
+    font-weight: 600;
+}
+
+/* ─── SSO Info Box ───────────────────────────────────────────────── */
+.sso-info-box {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255, 153, 0, 0.07);
+    border: 1px solid rgba(255, 153, 0, 0.2);
+    border-radius: 8px;
+    color: rgba(200, 210, 235, 0.85);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sso-info-box strong {
+    color: var(--accent, #ff9900);
+}
+
+.form-hint {
+    font-size: 11px;
+    color: var(--text-muted, #6b7080);
+    margin-top: 3px;
+}
+
+/* ─── SSO Code Step ──────────────────────────────────────────────── */
+.sso-code-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.sso-step-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    background: rgba(255, 153, 0, 0.15);
+    color: var(--accent, #ff9900);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 153, 0, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sso-instruction {
+    font-size: 13.5px;
+    color: rgba(200, 210, 235, 0.8);
+    line-height: 1.6;
+}
+
+.sso-link {
+    color: var(--accent, #ff9900);
+    text-decoration: underline;
+}
+
+.sso-code-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 153, 0, 0.25);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.sso-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #6b7080);
+    margin-bottom: 10px;
+}
+
+.sso-code-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sso-code-text {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--accent, #ff9900);
+    text-shadow: 0 0 20px rgba(255, 153, 0, 0.4);
+}
+
+.sso-copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(255, 153, 0, 0.12);
+    border: 1px solid rgba(255, 153, 0, 0.25);
+    color: var(--accent, #ff9900);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sso-copy-btn:hover {
+    background: rgba(255, 153, 0, 0.22);
+}
+
+.sso-url-box {
+    display: flex;
+    justify-content: center;
+}
+
+.sso-url-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(155, 165, 200, 0.8);
+    font-size: 12.5px;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.sso-url-link:hover {
+    color: var(--text-primary, #f0f4ff);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sso-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* ─── SSO Polling State ──────────────────────────────────────────── */
+.sso-polling,
+.sso-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    gap: 12px;
+}
+
+.sso-spinner-large {
+    margin-bottom: 8px;
+}
+
+.sso-polling-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary, #f0f4ff);
+}
+
+.sso-polling-sub {
+    font-size: 13px;
+    color: var(--text-muted, #6b7080);
+    line-height: 1.6;
+}
+
+.sso-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(52, 211, 153, 0.15);
+    border: 2px solid rgba(52, 211, 153, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.sso-success-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #34d399;
+}
+
+/* ─── Spin animation ─────────────────────────────────────────────── */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* ─── Secondary button ───────────────────────────────────────────── */
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary, #9ba5c8);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary, #f0f4ff);
+}

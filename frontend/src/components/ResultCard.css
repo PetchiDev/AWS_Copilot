@@ -1,0 +1,255 @@
+.result-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--bg-glass);
+    transition: border-color 0.2s;
+}
+
+.result-success {
+    border-left: 3px solid var(--green);
+}
+
+.result-error {
+    border-left: 3px solid var(--red);
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.result-icon-wrap {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: var(--green-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--green);
+    flex-shrink: 0;
+}
+
+.result-error .result-icon-wrap {
+    background: var(--red-dim);
+    color: var(--red);
+}
+
+.result-meta {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.result-service {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.result-time {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.result-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.result-body {
+    padding: 14px;
+}
+
+.result-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.result-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.result-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.result-table-wrap {
+    overflow-x: auto;
+}
+
+.result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.result-table th {
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+
+.result-table td {
+    padding: 7px 10px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.result-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
+.result-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.result-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.result-list-item {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.result-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.result-kv-row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.result-kv-key {
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.result-kv-val {
+    font-size: 11px;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.result-suggestions {
+    margin-top: 12px;
+}
+
+.suggestions-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.suggestions-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.suggestion-chip {
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(255, 153, 0, 0.2);
+    color: var(--accent);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.suggestion-chip:hover {
+    background: rgba(255, 153, 0, 0.25);
+}
+
+.result-raw {
+    border-top: 1px solid var(--border);
+}
+
+.result-raw-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: inherit;
+    transition: color 0.15s;
+}
+
+.result-raw-toggle:hover {
+    color: var(--text-secondary);
+}
+
+.copied-label {
+    margin-left: auto;
+    color: var(--green);
+    font-size: 10px;
+}
+
+.result-raw-code {
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border);
+}

@@ -1,0 +1,170 @@
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    background: rgba(10, 14, 26, 0.85);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.header-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-title {
+    font-size: 16px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-subtitle {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.region-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.region-select {
+    appearance: none;
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 28px 6px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.region-select:hover,
+.region-select:focus {
+    border-color: var(--accent);
+}
+
+.region-select option {
+    background: #1a2035;
+}
+
+.region-chevron {
+    position: absolute;
+    right: 8px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-connected {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.status-disconnected {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+}
+
+.account-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.account-id {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 768px) {
+
+    .header-subtitle,
+    .account-info {
+        display: none;
+    }
+
+    .header {
+        padding: 0 12px;
+        gap: 10px;
+    }
+
+    .status-badge span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-title {
+        font-size: 13px;
+    }
+
+    .region-select {
+        font-size: 10px;
+        padding: 5px 22px 5px 8px;
+    }
+}
