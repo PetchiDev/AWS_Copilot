@@ -85,8 +85,24 @@
     margin: 0 auto;
 }
 
-.clear-btn {
+.clear-btn, .voice-btn {
     flex-shrink: 0;
+}
+
+.voice-btn-active {
+    background: var(--accent-dim) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+.mic-animate {
+    animation: mic-pulse 1.5s infinite;
+}
+
+@keyframes mic-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .input-form {

@@ -8,29 +8,42 @@ const { getRegion } = require('./awsClient');
 
 function parseIntent(prompt) {
     const p = prompt.toLowerCase().trim();
+    console.log(`🧠 [Parser] Normalized prompt: "${p}"`);
 
     // ─── S3 ──────────────────────────────────────────────────────────
-    if (/s3|bucket|storage|object|upload|download/.test(p)) {
+    if (/s3|bucket|storage|object|upload|download|file/.test(p)) {
+        // Create
         if (/create|make|new|add|setup|build/.test(p) && /(bucket|s3)/.test(p)) {
             return { service: 'S3', action: 'CreateBucket', params: { name: extractBucketName(p), region: extractRegion(p) }, raw: prompt };
         }
-        if (/delete|remove|destroy|drop/.test(p) && /bucket/.test(p)) {
+        // Delete Bucket
+        if (/delete|remove|destroy|drop/.test(p) && /bucket/.test(p) && !/(object|file)/.test(p)) {
             return { service: 'S3', action: 'DeleteBucket', params: { name: extractBucketName(p) }, raw: prompt };
         }
+        // Upload/Put
         if (/upload|put/.test(p) && /(object|file)/.test(p)) {
             return { service: 'S3', action: 'PutObject', params: { bucket: extractBucketName(p) }, raw: prompt };
         }
+        // Delete Object
         if (/delete|remove/.test(p) && /(object|file|key)/.test(p)) {
             return { service: 'S3', action: 'DeleteObject', params: { bucket: extractBucketName(p), key: extractObjectKey(p) }, raw: prompt };
         }
-        // Storage / size / usage queries → ListObjects so Gemini can calculate total size
+        // Storage queries (priority)
         if (/storage|size|how big|how much|space|used|usage|capacity|bytes|mb|gb|kb/.test(p)) {
-            const bucket = extractBucketName(p);
-            return { service: 'S3', action: 'ListObjects', params: { bucket }, raw: prompt };
-        }
-        if (/(list|show|get|display)/.test(p) && /(object|file|content)/.test(p)) {
             return { service: 'S3', action: 'ListObjects', params: { bucket: extractBucketName(p) }, raw: prompt };
         }
+
+        // List Objects (Aggressive catch-all for specific bucket queries)
+        const bucketForList = extractBucketName(p);
+        if (bucketForList && bucketForList !== 'my-bucket' && /(list|show|get|display|any|inside|content|exist|what|check|file|object)/.test(p)) {
+            return { service: 'S3', action: 'ListObjects', params: { bucket: bucketForList }, raw: prompt };
+        }
+
+        // Default: List Objects if "list files" or similar
+        if (/(list|show|get|display|any|inside|content|exist|what|check)/.test(p) && /(object|file|content)/.test(p)) {
+            return { service: 'S3', action: 'ListObjects', params: { bucket: extractBucketName(p) }, raw: prompt };
+        }
+
         return { service: 'S3', action: 'ListBuckets', params: {}, raw: prompt };
     }
 
@@ -142,6 +155,16 @@ function parseIntent(prompt) {
         return { service: 'CloudWatch', action: 'ListMetrics', params: {}, raw: prompt };
     }
 
+    // ─── V3: Audit & Security ──────────────────────────────────────────
+    if (/audit|security|risk|cost|optimize|save|money|budget|vulnerability/.test(p)) {
+        if (/cost|money|save|budget/.test(p)) {
+            return { service: 'Audit', action: 'OptimizeCost', params: {}, raw: prompt };
+        }
+        if (/security|risk|vulnerability|protect/.test(p)) {
+            return { service: 'Audit', action: 'SecurityScan', params: {}, raw: prompt };
+        }
+    }
+
     // ─── Fallback ─────────────────────────────────────────────────────
     return { service: null, action: null, params: {}, raw: prompt };
 }
@@ -236,6 +259,14 @@ function extractBucketName(text) {
     // Quoted
     const quoted = t.match(/["']([^"']+)["']/i);
     if (quoted) return sanitizeS3(quoted[1]);
+
+    // "inside/in the X S3 bucket"
+    const insideS3 = t.match(/(?:inside|in)\s+(?:the\s+)?([a-z0-9][a-z0-9\-\.]{2,61})(?:\s+s3)?\s+bucket/i);
+    if (insideS3) return sanitizeS3(insideS3[1]);
+
+    // "inside/in (the) X"
+    const inside = t.match(/(?:inside|in)\s+(?:the\s+)?([a-z0-9][a-z0-9\-\.]{2,61})/i);
+    if (inside) return sanitizeS3(inside[1]);
 
     // "bucket named/called X"
     const namedBucket = t.match(/bucket\s+(?:named?|called?)\s+([a-z0-9][a-z0-9\-\.]{1,61})/i);

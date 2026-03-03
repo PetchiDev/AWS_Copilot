@@ -11,7 +11,7 @@ const {
     HeadBucketCommand,
     GetBucketLocationCommand
 } = require('@aws-sdk/client-s3');
-const { getS3Client, getRegion } = require('../services/awsClient');
+const { getS3Client, getS3ClientForBucket, getRegion } = require('../services/awsClient');
 
 const handleError = (err, res, next) => {
     console.error('S3 Error:', err.name, err.message);
@@ -70,7 +70,7 @@ router.post('/buckets', async (req, res) => {
 // DELETE /api/s3/buckets/:name — Delete a bucket
 router.delete('/buckets/:name', async (req, res) => {
     try {
-        const client = getS3Client(req.query.region);
+        const client = await getS3ClientForBucket(req.params.name);
         await client.send(new DeleteBucketCommand({ Bucket: req.params.name }));
         res.json({ success: true, message: `Bucket '${req.params.name}' deleted successfully` });
     } catch (err) { handleError(err, res); }
@@ -80,7 +80,7 @@ router.delete('/buckets/:name', async (req, res) => {
 router.get('/buckets/:name/objects', async (req, res) => {
     try {
         const { prefix, maxKeys = 100 } = req.query;
-        const client = getS3Client();
+        const client = await getS3ClientForBucket(req.params.name);
         const data = await client.send(new ListObjectsV2Command({
             Bucket: req.params.name,
             Prefix: prefix,
@@ -102,7 +102,7 @@ router.put('/buckets/:name/objects', async (req, res) => {
     try {
         const { key, body, contentType } = req.body;
         if (!key) return res.status(400).json({ success: false, error: 'Object key is required' });
-        const client = getS3Client();
+        const client = await getS3ClientForBucket(req.params.name);
         await client.send(new PutObjectCommand({
             Bucket: req.params.name,
             Key: key,
@@ -114,7 +114,7 @@ router.put('/buckets/:name/objects', async (req, res) => {
             message: `Object '${key}' uploaded to '${req.params.name}'`,
             object: { bucket: req.params.name, key, contentType }
         });
-    } catch (err) { handleError(err, res, next); }
+    } catch (err) { handleError(err, res); }
 });
 
 // DELETE /api/s3/buckets/:name/objects?key=path/to/key — Delete an object
@@ -122,7 +122,7 @@ router.delete('/buckets/:name/objects', async (req, res) => {
     try {
         const objectKey = req.query.key;
         if (!objectKey) return res.status(400).json({ success: false, error: 'key query param is required' });
-        const client = getS3Client();
+        const client = await getS3ClientForBucket(req.params.name);
         await client.send(new DeleteObjectCommand({
             Bucket: req.params.name,
             Key: objectKey

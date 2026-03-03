@@ -4,7 +4,7 @@
  * Credentials injected dynamically from request context or environment.
  */
 
-const { S3Client } = require('@aws-sdk/client-s3');
+const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 const { LambdaClient } = require('@aws-sdk/client-lambda');
 const { EC2Client } = require('@aws-sdk/client-ec2');
 const { IAMClient } = require('@aws-sdk/client-iam');
@@ -105,6 +105,24 @@ function getClient(ServiceClient, region) {
 // ─── Service-Specific Client Getters ───────────────────────────────
 
 const getS3Client = (region) => getClient(S3Client, region);
+
+/**
+ * Enhanced S3 Getter: Resolves the actual region of a bucket to avoid PermanentRedirect
+ */
+async function getS3ClientForBucket(bucketName) {
+    if (!bucketName) return getS3Client();
+
+    try {
+        const defaultClient = getS3Client();
+        const data = await defaultClient.send(new GetBucketLocationCommand({ Bucket: bucketName }));
+        // us-east-1 returns null/undefined or empty string
+        const region = data.LocationConstraint || 'us-east-1';
+        return getS3Client(region);
+    } catch (err) {
+        // Fallback to default if we can't get location (might be a 403 or already a redirect)
+        return getS3Client();
+    }
+}
 const getLambdaClient = (region) => getClient(LambdaClient, region);
 const getEC2Client = (region) => getClient(EC2Client, region);
 const getIAMClient = (region) => getClient(IAMClient, 'us-east-1'); // IAM is global
@@ -115,6 +133,7 @@ const getCloudWatchClient = (region) => getClient(CloudWatchClient, region);
 
 module.exports = {
     getS3Client,
+    getS3ClientForBucket,
     getLambdaClient,
     getEC2Client,
     getIAMClient,

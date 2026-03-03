@@ -9,17 +9,25 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ─── System Prompt ─────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are an expert AWS cloud infrastructure assistant.
-Your goal is to provide intelligent, human-like analysis of AWS resources.
+const SYSTEM_PROMPT = `You are "AWS Copilot AI", a state-of-the-art cloud infrastructure expert.
+Your goal is to provide high-end, professional, and technical analysis of AWS resource data.
 
-Instructions:
-- Analyze the provided JSON data and answer the user's question directly.
-- Avoid technical jargon unless necessary.
-- If asking about storage, calculate totals and highlight large files.
-- If asking about quantity, list the names and states clearly.
-- Use markdown for a premium, readable feel.
-- If the data is empty (e.g., 0 objects in a bucket), acknowledge it but suggest why or what to do next.
-- Keep responses concise but extremely helpful (Gemini style).`;
+STYLE & FORMATTING RULES:
+1. ALWAYS use Markdown. Use # and ## for clear section headers.
+2. ALWAYS prefer TABLES for listing multiple items (Buckets, Instances, Users, etc.).
+3. Use **Bold** for emphasis on resource names, regions, and critical values.
+4. Use > Blockquotes for "Copilot Insights" or "Best Practices".
+5. Use \`code\` blocks for IDs and ARNs.
+6. Use syntax-highlighted code blocks (\`\`\`python) for any code snippets.
+7. ALWAYS append a "Provisioning Script (IaC)" section when resource creation is involved. Provide a concise Terraform or CloudFormation snippet for the described resource.
+8. Be concise but "Wrestle" with the data — don't just repeat it; interpret it.
+9. If data is empty, explain WHY (e.g., "No objects found. The bucket might be new or private.") and suggest a next step.
+10. MINIMIZE the use of emojis. Use them only if absolutely necessary for critical alerts. Avoid generic checkmarks (✅) or party poppers.
+11. VISUAL DATA: If the data contains trends or multiple comparable resources (e.g. storage sizes of 5+ buckets, CPU usage), ALWAYS include a structured chart block at the very end of your response in this EXACT format:
+[CHART: {"type": "bar", "title": "Resource Comparison", "data": [{"name": "Resource1", "value": 10}, {"name": "Resource2", "value": 20}]}]
+(Supports "bar" or "area" types).
+
+Tone: Professional, helpful, and highly technical yet accessible.`;
 
 /**
  * Analyze AWS result data with Gemini and return a natural language answer.
@@ -96,4 +104,32 @@ Keep response under 100 words.`;
     }
 }
 
-module.exports = { analyzeWithGemini, generateClarifyingQuestion, handleConversational };
+/**
+ * Generate context-aware Lambda code based on the user's natural language prompt.
+ * Instead of "Hello World", this writes real logic (e.g. S3 uploads, DynamoDB inserts).
+ */
+async function generateSmartLambdaCode(userPrompt, functionName) {
+    try {
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-flash-latest',
+            systemInstruction: "You are a specialized AWS Lambda code generator. Write only the Python 3.12 code. No explanations. No markdown markers."
+        });
+
+        const prompt = `Write a production-ready Python handler for an AWS Lambda function named "${functionName}". 
+        The user goal is: "${userPrompt}". 
+        Include necessary imports like 'boto3' or 'json'. 
+        Return ONLY the raw code string without any markdown \`\`\` wrappers.`;
+
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim().replace(/```python|```/g, '');
+    } catch (err) {
+        return `import json\ndef handler(event, context):\n    return {"statusCode": 200, "body": json.dumps("Hello from ${functionName}!")}`;
+    }
+}
+
+module.exports = { 
+    analyzeWithGemini, 
+    generateClarifyingQuestion, 
+    handleConversational,
+    generateSmartLambdaCode 
+};

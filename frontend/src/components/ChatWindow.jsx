@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Trash2, Sparkles } from 'lucide-react';
+import { Send, Trash2, Sparkles, Mic, MicOff } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import './ChatWindow.css';
 
@@ -15,6 +15,8 @@ const QUICK_PROMPTS = [
 
 export default function ChatWindow({ messages, loading, onSend, onClear, onAuthRequired, prefilledPrompt, setPrefilledPrompt }) {
     const [input, setInput] = useState('');
+    const [listening, setListening] = useState(false);
+    const recognitionRef = useRef(null);
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -31,6 +33,43 @@ export default function ChatWindow({ messages, loading, onSend, onClear, onAuthR
             inputRef.current?.focus();
         }
     }, [prefilledPrompt, setPrefilledPrompt]);
+
+    // Initialize Speech Recognition
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => setListening(true);
+            recognition.onend = () => setListening(false);
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                setListening(false);
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if (transcript) {
+                    setInput(transcript);
+                    // Give a tiny delay so user can see it before auto-send
+                    setTimeout(() => onSend(transcript), 500);
+                }
+            };
+            recognitionRef.current = recognition;
+        }
+    }, [onSend]);
+
+    const toggleListening = () => {
+        if (listening) {
+            recognitionRef.current?.stop();
+        } else {
+            setInput('');
+            recognitionRef.current?.start();
+        }
+    };
 
     const handleSubmit = useCallback((e) => {
         e?.preventDefault();
@@ -89,6 +128,15 @@ export default function ChatWindow({ messages, loading, onSend, onClear, onAuthR
                         title="Clear chat"
                     >
                         <Trash2 size={14} />
+                    </button>
+
+                    <button
+                        className={`btn btn-icon voice-btn ${listening ? 'voice-btn-active' : ''}`}
+                        onClick={toggleListening}
+                        title={listening ? 'Stop listening' : 'Start voice command'}
+                        type="button"
+                    >
+                        {listening ? <MicOff size={14} className="mic-animate" /> : <Mic size={14} />}
                     </button>
 
                     <form className="input-form" onSubmit={handleSubmit}>

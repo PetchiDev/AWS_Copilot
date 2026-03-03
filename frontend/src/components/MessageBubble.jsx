@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import ResultCard from './ResultCard';
+import ResourceChart from './ResourceChart';
 import './MessageBubble.css';
 
 // Typing indicator dots
@@ -46,13 +49,37 @@ export default function MessageBubble({ message, isLoading }) {
                 <div className="bubble-avatar bubble-avatar-assistant"><Bot size={14} /></div>
             )}
 
-            <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-assistant'}`}>
-                {/* Content */}
-                <div className="bubble-content">
-                    {message.content.split('\n').map((line, i) => (
-                        <p key={i} className="bubble-line">{line}</p>
-                    ))}
-                </div>
+            {/* Parse Chart Data if present */}
+            {(() => {
+                const chartMatch = !isUser && message.content ? message.content.match(/\[CHART:\s*({.*?})\]/s) : null;
+                let chartConfig = null;
+                let cleanedContent = message.content;
+
+                if (chartMatch) {
+                    try {
+                        chartConfig = JSON.parse(chartMatch[1]);
+                        cleanedContent = message.content.replace(chartMatch[0], '').trim();
+                    } catch (e) {
+                        console.error("Failed to parse chart data:", e);
+                    }
+                }
+
+                return (
+                    <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-assistant'}`}>
+                        <div className="bubble-content">
+                            <div className="markdown-content">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {cleanedContent}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
+
+                        {/* Chart Visualization */}
+                        {chartConfig && (
+                            <div className="bubble-chart">
+                                <ResourceChart config={chartConfig} />
+                            </div>
+                        )}
 
                 {/* Welcome suggestions */}
                 {message.suggestions && !message.data && (
@@ -76,11 +103,13 @@ export default function MessageBubble({ message, isLoading }) {
                     </div>
                 )}
 
-                {/* Timestamp */}
-                <span className="bubble-time">
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-            </div>
+                    {/* Timestamp */}
+                    <span className="bubble-time">
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+                );
+            })()}
 
             {isUser && (
                 <div className="bubble-avatar bubble-avatar-user"><User size={14} /></div>

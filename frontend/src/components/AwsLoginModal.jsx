@@ -13,7 +13,7 @@ const AWS_REGIONS = [
     'eu-west-1', 'eu-west-2', 'eu-central-1', 'ca-central-1', 'sa-east-1', 'me-south-1'
 ];
 
-const API = axios.create({ baseURL: 'http://localhost:5000' });
+const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000' });
 
 // ─── Custom Region Dropdown ────────────────────────────────────────
 function RegionDropdown({ value, onChange }) {

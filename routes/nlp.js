@@ -3,12 +3,12 @@ const router = express.Router();
 const { parseIntent } = require('../services/intentParser');
 const { isConfigured, getRegion } = require('../services/awsClient');
 const { checkMissingParams, resolveClarification, checkConversational } = require('../services/conversationEngine');
-const { analyzeWithGemini, generateClarifyingQuestion, handleConversational: geminiConversational } = require('../services/geminiService');
+const { analyzeWithGemini, generateClarifyingQuestion, generateSmartLambdaCode, handleConversational: geminiConversational } = require('../services/geminiService');
 
 // AWS SDK commands
-const { ListBucketsCommand, CreateBucketCommand, DeleteBucketCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { ListBucketsCommand, CreateBucketCommand, DeleteBucketCommand, ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand, GetPublicAccessBlockCommand } = require('@aws-sdk/client-s3');
 const { ListFunctionsCommand, GetFunctionCommand, CreateFunctionCommand, DeleteFunctionCommand, InvokeCommand } = require('@aws-sdk/client-lambda');
-const { DescribeInstancesCommand, StartInstancesCommand, StopInstancesCommand } = require('@aws-sdk/client-ec2');
+const { DescribeInstancesCommand, StartInstancesCommand, StopInstancesCommand, DescribeSecurityGroupsCommand } = require('@aws-sdk/client-ec2');
 const { ListUsersCommand, ListRolesCommand, ListPoliciesCommand, CreateRoleCommand, DeleteRoleCommand, AttachRolePolicyCommand, DetachRolePolicyCommand, ListAttachedRolePoliciesCommand, GetRoleCommand, CreateAccessKeyCommand, ListAccessKeysCommand, DeleteAccessKeyCommand } = require('@aws-sdk/client-iam');
 
 const { ListTablesCommand, CreateTableCommand, ScanCommand } = require('@aws-sdk/client-dynamodb');
@@ -17,7 +17,7 @@ const { ListTopicsCommand, CreateTopicCommand } = require('@aws-sdk/client-sns')
 const { ListMetricsCommand, DescribeAlarmsCommand } = require('@aws-sdk/client-cloudwatch');
 
 const {
-    getS3Client, getLambdaClient, getEC2Client, getIAMClient,
+    getS3Client, getS3ClientForBucket, getLambdaClient, getEC2Client, getIAMClient,
     getDynamoDBClient, getSQSClient, getSNSClient, getCloudWatchClient
 } = require('../services/awsClient');
 
@@ -69,10 +69,6 @@ async function autoGetOrCreateLambdaRole() {
             decodeURIComponent(r.AssumeRolePolicyDocument).includes('lambda.amazonaws.com')
         );
         if (anyLambda) return { arn: anyLambda.Arn, created: false, roleName: anyLambda.RoleName };
-
-        // Priority 3: loose name match
-        const loose = roles.find(r => /lambda/i.test(r.RoleName));
-        if (loose) return { arn: loose.Arn, created: false, roleName: loose.RoleName };
 
         // ── No role found → AUTO-CREATE one ──────────────────────────────
         console.log('🔧 No Lambda role found — auto-creating AWSCopilotLambdaExecutionRole...');
@@ -143,7 +139,9 @@ router.post('/execute', async (req, res, next) => {
 
         // ── Step 3: If no context resolution, parse normally ──────────
         if (!intent) {
+            console.log(`🔍 [NLP] Parsing prompt: "${prompt}"`);
             intent = parseIntent(prompt);
+            console.log(`🎯 [NLP] Parsed intent: ${intent.service} -> ${intent.action}`, intent.params);
             r = region || (intent.params?.region) || getRegion();
         }
 
@@ -220,13 +218,14 @@ async function executeAction(intent, region) {
         // S3
         // ════════════════════════════════════════════════════════════════
         case 'S3': {
-            const client = getS3Client(region);
             switch (action) {
                 case 'ListBuckets': {
+                    const client = getS3Client(region);
                     const data = await client.send(new ListBucketsCommand({}));
                     return { buckets: data.Buckets || [], count: data.Buckets?.length || 0 };
                 }
                 case 'CreateBucket': {
+                    const client = getS3Client(region);
                     const name = params.name || 'my-bucket';
                     const r = params.region || region;
                     const p = { Bucket: name };
@@ -240,18 +239,23 @@ async function executeAction(intent, region) {
                     };
                 }
                 case 'DeleteBucket': {
+                    const client = await getS3ClientForBucket(params.name);
                     await client.send(new DeleteBucketCommand({ Bucket: params.name }));
                     return { message: ` Bucket '${params.name}' deleted successfully` };
                 }
                 case 'ListObjects': {
-                    const data = await client.send(new ListObjectsV2Command({ Bucket: params.bucket || params.name, MaxKeys: 100 }));
-                    return { objects: data.Contents || [], count: data.KeyCount || 0, bucket: params.bucket || params.name };
+                    const bucketName = params.bucket || params.name;
+                    const client = await getS3ClientForBucket(bucketName);
+                    const data = await client.send(new ListObjectsV2Command({ Bucket: bucketName, MaxKeys: 100 }));
+                    return { objects: data.Contents || [], count: data.KeyCount || 0, bucket: bucketName };
                 }
                 case 'PutObject': {
+                    const client = await getS3ClientForBucket(params.bucket);
                     await client.send(new PutObjectCommand({ Bucket: params.bucket, Key: params.key || 'new-object.txt', Body: '' }));
                     return { message: ` Object uploaded to '${params.bucket}'` };
                 }
                 case 'DeleteObject': {
+                    const client = await getS3ClientForBucket(params.bucket);
                     await client.send(new DeleteObjectCommand({ Bucket: params.bucket, Key: params.key }));
                     return { message: ` Object '${params.key}' deleted from '${params.bucket}'` };
                 }
@@ -302,8 +306,9 @@ async function executeAction(intent, region) {
                         };
                     }
 
-                    // Step 2: Build zip with placeholder Python code
-                    const codeStr = DEFAULT_LAMBDA_CODE(fnName);
+                    // Step 2: Build zip with SMART AI-generated code
+                    console.log(`🧠 Generating smart code for function: ${fnName}...`);
+                    const codeStr = await generateSmartLambdaCode(intent.raw || prompt, fnName);
                     const zipBuffer = buildInMemoryZip('lambda_function.py', codeStr);
 
                     // Step 3: Create the function
@@ -333,7 +338,7 @@ async function executeAction(intent, region) {
                         consoleUrl: `https://${r}.console.aws.amazon.com/lambda/home?region=${r}#/functions/${data.FunctionName}`,
                         message: ` Lambda function '${fnName}' created successfully!`,
                         roleAutoCreated: roleInfo?.created ? `Auto-created role '${roleInfo.roleName}' with AWSLambdaBasicExecutionRole` : undefined,
-                        code: `# Default handler uploaded:\n${codeStr}`
+                        code: `# AI-Generated Logic:\n${codeStr}`
                     };
                 }
 
@@ -581,10 +586,60 @@ async function executeAction(intent, region) {
                 }
                 case 'CreateTopic': {
                     const data = await client.send(new CreateTopicCommand({ Name: params.name }));
-                    return { topicArn: data.TopicArn, message: ` SNS topic '${params.name}' created` };
+                    return { topicArn: data.TopicArn, message: ` SNS Topic '${params.name}' created` };
                 }
-                default:
-                    return { message: `Use POST /api/sns/publish or /subscribe for message operations` };
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // V3: Audit & Security
+        // ════════════════════════════════════════════════════════════════
+        case 'Audit': {
+            const s3 = getS3Client(region);
+            const ec2 = getEC2Client(region);
+
+            if (action === 'OptimizeCost') {
+                const [buckets, instances] = await Promise.all([
+                    s3.send(new ListBucketsCommand({})),
+                    ec2.send(new DescribeInstancesCommand({}))
+                ]);
+                return {
+                    auditType: 'Cost Optimization',
+                    buckets: buckets.Buckets || [],
+                    instances: (instances.Reservations || []).flatMap(r => r.Instances || [])
+                        .map(i => ({ id: i.InstanceId, type: i.InstanceType, state: i.State.Name, launchTime: i.LaunchTime })),
+                    message: "I've gathered your EC2 and S3 fleet data. Analyzing for cost savings..."
+                };
+            }
+
+            if (action === 'SecurityScan') {
+                const [bucketsData, sgs] = await Promise.all([
+                    s3.send(new ListBucketsCommand({})),
+                    ec2.send(new DescribeSecurityGroupsCommand({}))
+                ]);
+
+                // Deep scan buckets for public access
+                const buckets = bucketsData.Buckets || [];
+                const securityStatus = await Promise.all(buckets.map(async (b) => {
+                    try {
+                        const block = await s3.send(new GetPublicAccessBlockCommand({ Bucket: b.Name }));
+                        return { name: b.Name, publicAccessBlock: block.PublicAccessBlockConfiguration };
+                    } catch {
+                        return { name: b.Name, publicAccessBlock: "Unknown/Error" };
+                    }
+                }));
+
+                return {
+                    auditType: 'Security Scan',
+                    bucketSecurity: securityStatus,
+                    securityGroups: (sgs.SecurityGroups || []).map(sg => ({
+                        id: sg.GroupId,
+                        name: sg.GroupName,
+                        description: sg.Description,
+                        ingress: sg.IpPermissions
+                    })),
+                    message: "Performing security audit on S3 buckets and EC2 Security Groups..."
+                };
             }
         }
 
