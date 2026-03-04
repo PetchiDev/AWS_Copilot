@@ -29,11 +29,17 @@ function getCredentials() {
             ...(storedCredentials.sessionToken && { sessionToken: storedCredentials.sessionToken })
         };
     }
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+
+    // Check for Lambda-safe environment variables first
+    const accessKeyId = process.env.APP_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.APP_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+    const sessionToken = process.env.AWS_SESSION_TOKEN;
+
+    if (accessKeyId && secretAccessKey) {
         return {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            ...(process.env.AWS_SESSION_TOKEN && { sessionToken: process.env.AWS_SESSION_TOKEN })
+            accessKeyId,
+            secretAccessKey,
+            ...(sessionToken && { sessionToken })
         };
     }
     return null;
@@ -44,6 +50,7 @@ function getCredentials() {
  */
 function getRegion() {
     return (storedCredentials && storedCredentials.region) ||
+        process.env.APP_AWS_REGION ||
         process.env.AWS_REGION ||
         'ap-south-1';
 }

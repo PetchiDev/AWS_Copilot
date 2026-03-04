@@ -133,11 +133,15 @@ function parseAwsError(err) {
   };
 }
 
-// ─── Start Server ──────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🚀 AWS Copilot Backend running on http://localhost:${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/health`);
-  console.log(`⏱️  Response-time tracking: X-Response-Time header on all responses\n`);
-});
+// ─── Serverless Export ──────────────────────────────────────────────
+const serverless = require('serverless-http');
+module.exports.handler = serverless(app);
 
-module.exports = app;
+// ─── Start Server (Local Only) ──────────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 AWS Copilot Backend running on http://localhost:${PORT}`);
+    console.log(`📋 Health check: http://localhost:${PORT}/health`);
+    console.log(`⏱️  Response-time tracking: X-Response-Time header on all responses\n`);
+  });
+}

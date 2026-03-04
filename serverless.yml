@@ -1,0 +1,35 @@
+service: aws-copilot-backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  stage: dev
+  memorySize: 512
+  timeout: 30
+  environment:
+    NODE_ENV: production
+    GEMINI_API_KEY: ${env:GEMINI_API_KEY}
+    APP_AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID}
+    APP_AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY}
+    APP_AWS_REGION: ap-south-1
+    CORS_ORIGIN: "http://aws-copilot-petchi-frontend.s3-website.ap-south-1.amazonaws.com"
+
+functions:
+  api:
+    handler: server.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+
+package:
+  exclude:
+    - frontend/**
+    - .git/**
+    - node_modules/nodemon/**
